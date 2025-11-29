@@ -1,6 +1,6 @@
 /******************************************************************
  *
- *   ADD YOUR NAME / SECTION NUMBER HERE
+ *   Julia Harper / Data Structure II -#8
  *
  *   This java file contains the problem solutions of canFinish and
  *   numGroups methods.
@@ -71,50 +71,66 @@ class ProblemSolutions {
      * @param prerequisites     - 2-dim array of directed edges.
      * @return boolean          - True if all exams can be taken, else false.
      */
-
-    public boolean canFinish(int numExams, 
-                             int[][] prerequisites) {
-      
+    public boolean canFinish(int numExams, int[][] prerequisites) {
         int numNodes = numExams;  // # of nodes in graph
 
         // Build directed graph's adjacency list
-        ArrayList<Integer>[] adj = getAdjList(numExams, 
-                                        prerequisites); 
+        ArrayList<Integer>[] adj = getAdjList(numExams, prerequisites);
 
-        // ADD YOUR CODE HERE - ADD YOUR NAME / SECTION AT TOP OF FILE
-        return false;
+        // visited array to track nodes already fully processed
+        boolean[] visited = new boolean[numNodes];
+        // recStack array to track nodes in the current recursion stack
+        boolean[] recStack = new boolean[numNodes];
 
+        // check all nodes for cycles using DFS
+        for (int i = 0; i < numNodes; i++) {
+            if (!visited[i]) {
+                if (isCyclicDFS(i, adj, visited, recStack)) {
+                    return false; // cycle detected
+                }
+            }
+        }
+
+        return true; // no cycle detected, exams can be completed
     }
 
-
     /**
-     * Method getAdjList
-     *
-     * Building an Adjacency List for the directed graph based on number of nodes
-     * and passed in directed edges.
-     *
-     * @param numNodes      - number of nodes in graph (labeled 0 through n-1) for n nodes
-     * @param edges         - 2-dim array of directed edges
-     * @return ArrayList<Integer>[]  - An adjacency list representing the provided graph.
+     * Helper method to build adjacency list from edge list
      */
-
-    private ArrayList<Integer>[] getAdjList(
-            int numNodes, int[][] edges) {
-
-        ArrayList<Integer>[] adj 
-                    = new ArrayList[numNodes];      // Create an array of ArrayList ADT
-
-        for (int node = 0; node < numNodes; node++){
-            adj[node] = new ArrayList<Integer>();   // Allocate empty ArrayList per node
+    private ArrayList<Integer>[] getAdjList(int numNodes, int[][] edges) {
+        ArrayList<Integer>[] adj = new ArrayList[numNodes];
+        for (int node = 0; node < numNodes; node++) {
+            adj[node] = new ArrayList<>();
         }
-        for (int[] edge : edges){
-            adj[edge[0]].add(edge[1]);              // Add connected node edge [1] for node [0]
+        for (int[] edge : edges) {
+            adj[edge[0]].add(edge[1]); // Add directed edge from [0] -> [1]
         }
         return adj;
     }
 
+    /**
+     * DFS to detect cycle in a directed graph
+     */
+    private boolean isCyclicDFS(int node, ArrayList<Integer>[] adj, boolean[] visited, boolean[] recStack) {
+        if (recStack[node]) return true; // cycle found
+        if (visited[node]) return false;
 
-    /*
+        visited[node] = true;
+        recStack[node] = true;
+
+        for (int neighbor : adj[node]) {
+            if (isCyclicDFS(neighbor, adj, visited, recStack)) {
+                return true;
+            }
+        }
+
+        recStack[node] = false;
+        return false;
+    }
+
+    // ----------------- numGroups() -----------------
+
+    /**
      * Assignment Graphing - Number of groups.
      *
      * There are n people. Some of them are connected
@@ -138,11 +154,11 @@ class ProblemSolutions {
      *
      * Example 1:
      *   Input :
-         AdjMatrix = [[0,1,0], [1,0,0], [0,0,0]]
+     *     AdjMatrix = [[0,1,0], [1,0,0], [0,0,0]]
      *   Output: 2
      *   Explanation: The Adjacency Matrix defines an
      *   undirected graph of 3 nodes (indexed 0 to 2).
-     *   Where nodes 0 and 1 aee connected, and node 2
+     *   Where nodes 0 and 1 are connected, and node 2
      *   is NOT connected. This forms two groups of
      *   nodes.
      *
@@ -160,39 +176,47 @@ class ProblemSolutions {
      *   Explanation, The adjacency Matrix defined an
      *   undirected graph of 3 nodes (index 0 to 2).
      *   All three nodes are connected by at least one
-     *   edge. So they form on large group.
+     *   edge. So they form one large group.
      */
-
     public int numGroups(int[][] adjMatrix) {
         int numNodes = adjMatrix.length;
-        Map<Integer,List<Integer>> graph = new HashMap();
-        int i = 0, j =0;
+        Map<Integer, List<Integer>> graph = new HashMap<>();
 
-        /*
-         * Converting the Graph Adjacency Matrix to
-         * an Adjacency List representation. This
-         * sample code illustrates a technique to do so.
-         */
-
-        for(i = 0; i < numNodes ; i++){
-            for(j = 0; j < numNodes; j++){
-                if( adjMatrix[i][j] == 1 && i != j ){
-                    // Add AdjList for node i if not there
-                    graph.putIfAbsent(i, new ArrayList());
-                    // Add AdjList for node j if not there
-                    graph.putIfAbsent(j, new ArrayList());
-
-                    // Update node i adjList to include node j
+        // Converting adjacency matrix to adjacency list
+        for (int i = 0; i < numNodes; i++) {
+            for (int j = 0; j < numNodes; j++) {
+                if (adjMatrix[i][j] == 1 && i != j) {
+                    graph.putIfAbsent(i, new ArrayList<>());
+                    graph.putIfAbsent(j, new ArrayList<>());
                     graph.get(i).add(j);
-                    // Update node j adjList to include node i
                     graph.get(j).add(i);
                 }
             }
         }
 
-        // YOUR CODE GOES HERE - you can add helper methods, you do not need
-        // to put all code in this method.
-        return -1;
+        boolean[] visited = new boolean[numNodes];
+        int groupCount = 0;
+
+        for (int i = 0; i < numNodes; i++) {
+            if (!visited[i]) {
+                dfsGroup(i, graph, visited);
+                groupCount++; // new connected component found
+            }
+        }
+
+        return groupCount;
     }
 
-}
+    /**
+     * DFS helper for numGroups
+     */
+    private void dfsGroup(int node, Map<Integer, List<Integer>> graph, boolean[] visited) {
+        visited[node] = true;
+        if (!graph.containsKey(node)) return;
+
+        for (int neighbor : graph.get(node)) {
+            if (!visited[neighbor]) dfsGroup(neighbor, graph, visited);
+        }
+    }
+
+} // end class
